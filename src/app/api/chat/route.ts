@@ -17,22 +17,30 @@ export async function POST(request: Request) {
 
   const { document, question } = result.data;
 
-  const completion = await openai.chat.completions.create({
-    model: "gpt-4.1-mini",
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are an assistant that helps answer questions based on the provided document.",
-      },
-      {
-        role: "user",
-        content: `Project documentation:\n\n${document}\n\nQuestion:\n\n${question}`,
-      },
-    ],
-  });
+  try {
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4.1-mini",
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an assistant that helps answer questions based on the provided document.",
+        },
+        {
+          role: "user",
+          content: `Project documentation:\n\n${document}\n\nQuestion:\n\n${question}`,
+        },
+      ],
+    });
 
-  const answer = completion.choices[0].message.content ?? "";
+    const answer = completion.choices[0].message.content ?? "";
 
-  return NextResponse.json({ answer });
+    return NextResponse.json({ answer });
+  } catch (error) {
+    console.error("Error generating chat response:", error);
+    return NextResponse.json(
+      { error: "Failed to generate response" },
+      { status: 500 },
+    );
+  }
 }
