@@ -9,24 +9,36 @@ export function ChatPanel() {
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setIsLoading(true);
+    setError("");
     setAnswer("");
 
-    const response = await fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ document, question }),
-    });
-    const data = (await response.json()) as ChatResponse;
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ document, question }),
+      });
+      const data = (await response.json()) as ChatResponse;
 
-    setAnswer(data.answer);
-    setIsLoading(false);
+      if (!response.ok) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
+      setAnswer(data.answer);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Unexpected error";
+      setError(message);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -63,7 +75,7 @@ export function ChatPanel() {
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || !document.trim() || !question.trim()}
           className="rounded bg-black px-4 py-3 text-white disabled:opacity-50"
         >
           {isLoading ? "Thinking..." : "Ask AI"}
@@ -74,6 +86,11 @@ export function ChatPanel() {
         <div className="rounded border p-4">
           <h2 className="font-semibold">Answer</h2>
           <p className="mt-2 whitespace-pre-wrap">{answer}</p>
+        </div>
+      )}
+      {error && (
+        <div className="rounded border border-red-300 p-4">
+          <p>{error}</p>
         </div>
       )}
     </section>
